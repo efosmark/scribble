@@ -1,0 +1,21 @@
+body {
+    padding: 30px;
+    /* font-family: "Mynerve", cursive;
+    font-weight: 400; */
+    font-family: 'Courier New', Courier, monospace;
+    font-style: normal;
+    background-color: rgb(217, 217, 217);
+    /* overflow: hidden; */
+    color: black;
+}
+
+svg {
+    margin: 0 auto;
+    cursor: text;
+    display: block;
+    background-color: white;
+    color: black;
+    border: 1px solid #888;
+    border-radius: 3px;
+    box-shadow: 5px 5px 5px #999;
+}
