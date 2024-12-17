@@ -19,3 +19,30 @@ svg {
     border-radius: 3px;
     box-shadow: 5px 5px 5px #999;
 }
+
+div.options {
+    position: fixed;
+    right: 10px;
+    top: 35px;
+    width: 120px;
+    border: 1px solid rgba(180, 169, 142, 0.8);
+    border-radius: 5px;
+    padding: 10px;
+    background-color: rgba(255, 226, 164, 0.2);
+    opacity: 0.3;
+}
+
+div.options:hover {
+    opacity: 1;
+}
+
+a {
+    cursor: pointer;
+    color: blue;
+    font-size: 12px;
+    letter-spacing: -0.05 em;
+}
+
+a:hover {
+    text-decoration: underline;
+}

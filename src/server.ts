@@ -42,6 +42,15 @@ export class SharedNoteManager {
         this.broadcast(new Action(ACTION_SET_CELL, { x, y, key }), undefined)
     }
 
+    clearAll() {
+        for (let [y, row] of this.cells.entries()) {
+            for (let [x, key] of row) {
+                if (key !== ' ')
+                    this.setCell(x, y, ' ');
+            }
+        }
+    }
+
     broadcast(packet: Action, fromIdent: number | undefined) {
         for (let [socket, client] of this.clients.entries()) {
             client.send(packet);
