@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
 import { CELL_WIDTH, CELL_HEIGHT, NUM_ROWS, NUM_COLS } from '../constants';
 import Cell from './Cell';
@@ -52,21 +52,32 @@ interface SvgPaperProps {
     setCell(cell: GridLocation, value: string): void;
 }
 
+const cellKey = (cell: GridLocation): string => `${cell.row}-${cell.col}`;
+
+
 export default ({ grid, setCell }: SvgPaperProps) => {
     const [cursor, setCursor] = useState<Cursor>(DEFAULT_CURSOR);
     const [selection, setSelection] = useState<SelectionRange>();
     const [inSelectionMode, setInSelectionMode] = useState<boolean>(false);
     const [hoveredCell, setHoveredCell] = useState<GridLocation>();
 
-    useKeyInputHandler({ setCell, cursor, setCursor });
+    const selectedCells = useMemo((): GridLocation[] => {
+        if (!selection || !selection.start || !selection.end)
+            return [{ row: cursor.row, col: cursor.col }];
 
-    const handleCellClick = useCallback((row: number, col: number) => {
-        setCursor({ row, col, carriage: col });
-    }, []);
+        const { start, end } = selection;
+        const [startRow, endRow] = [Math.min(start.row, end.row), Math.max(start.row, end.row)];
+        const [startCol, endCol] = [Math.min(start.col, end.col), Math.max(start.col, end.col)];
 
-    const handleCellHover = useCallback((row: number, col: number) => {
-        setHoveredCell({ row, col });
-    }, []);
+        const rows = Array.from({ length: endRow - startRow + 1 }, (_, r: number) => startRow + r);
+        const cols = Array.from({ length: endCol - startCol + 1 }, (_, c: number) => startCol + c);
+        return rows.map(row => cols.map(col => ({ row, col }))).flat();
+
+    }, [selection, cursor]);
+
+
+
+    useKeyInputHandler({ selectedCells, setCell, cursor, setCursor });
 
     const handleCellPointerUp = useCallback(() => {
         setInSelectionMode(false);
@@ -103,18 +114,9 @@ export default ({ grid, setCell }: SvgPaperProps) => {
             }
     }, [selection, inSelectionMode]);
 
-
     const isCellSelected = useCallback((cell: GridLocation): boolean => {
-        if (selection?.start && selection?.end) {
-            const [start, end] = selection.start.row < selection.end.row
-                ? [selection.start, selection.end]
-                : [selection.end, selection.start];
-
-            return (start.row <= cell.row && cell.row <= end.row)
-                && (start.col <= cell.col && cell.col <= end.col);
-        }
-        return false;
-    }, [selection]);
+        return selectedCells.find(c => c.row === cell.row && c.col === cell.col) !== undefined;
+    }, [selectedCells]);
 
     return (
         <svg
@@ -135,8 +137,8 @@ export default ({ grid, setCell }: SvgPaperProps) => {
                             cellWidth={CELL_WIDTH}
                             cellHeight={CELL_HEIGHT}
                             isSelected={isCellSelected({ row: y, col: x })}
-                            onCellClick={handleCellClick}
-                            onCellHover={handleCellHover}
+                            onCellClick={setCursor}
+                            onCellHover={setHoveredCell}
                         />
                     ))}
                 </g>

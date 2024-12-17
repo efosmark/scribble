@@ -8,20 +8,20 @@ interface CellProps {
     cellWidth: number;
     cellHeight: number;
     isSelected: boolean;
-    onCellClick(row: number, col: number): void;
-    onCellHover(row: number, col: number): void;
+    onCellClick(cell: Cursor): void;
+    onCellHover(cell: GridLocation): void;
 }
 
 const Cell: React.FC<CellProps> = React.memo(({ row, col, value, isSelected, onCellClick, onCellHover }) => {
     const onCellClickCB = useCallback((event: MouseEvent) => {
         console.log('click')
         event.stopPropagation();
-        return onCellClick(row, col);
+        return onCellClick({ row, col, carriage: col });
     }, [row, col]);
 
     return <g
         onClick={onCellClickCB}
-        onPointerOver={useCallback(() => onCellHover(row, col), [row, col])}
+        onPointerOver={useCallback(() => onCellHover({ row, col }), [row, col])}
     >
         <rect
             x={col * CELL_WIDTH}

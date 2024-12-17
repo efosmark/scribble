@@ -1,15 +1,14 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-
-const NUM_ROWS = 40;
-const NUM_COLS = 80;
+import { NUM_COLS, NUM_ROWS } from './constants';
 
 interface SvgKeyHandler {
     setCell(loc: GridLocation, key: string): void;
     setCursor(cursor: Cursor): void;
     cursor: Cursor;
+    selectedCells: GridLocation[],
 }
 
-const useKeyInputHandler = ({ setCell, cursor, setCursor }: SvgKeyHandler) => {
+const useKeyInputHandler = ({ selectedCells, setCell, cursor, setCursor }: SvgKeyHandler) => {
 
     const onBackspace = useCallback(() => {
         const { col, row, carriage } = cursor;
@@ -43,12 +42,20 @@ const useKeyInputHandler = ({ setCell, cursor, setCursor }: SvgKeyHandler) => {
     }, [cursor]);
 
     const onKeyDown = useCallback((key: string) => {
-        const { row, col, carriage } = cursor;
-        const newCol = (col + 1) % NUM_COLS;
-        const newRow = newCol === 0 ? (row + 1) % NUM_ROWS : row;
-        setCursor({ col: newCol, row: newRow, carriage });
-        setCell({ row, col }, key);
-    }, [cursor]);
+        if (selectedCells.length > 1) {
+            for (let cell of selectedCells) {
+                setCell(cell, key);
+            }
+        } else {
+            const { row, col, carriage } = cursor;
+            const newCol = (col + 1) % NUM_COLS;
+            const newRow = newCol === 0 ? (row + 1) % NUM_ROWS : row;
+            setCursor({ col: newCol, row: newRow, carriage });
+            setCell({ row, col }, key);
+        }
+
+
+    }, [cursor, selectedCells]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -69,7 +76,7 @@ const useKeyInputHandler = ({ setCell, cursor, setCursor }: SvgKeyHandler) => {
         return () => {
             document.removeEventListener("keydown", handleKeyDown);
         };
-    }, [cursor]);
+    }, [cursor, selectedCells]);
 };
 
 export default useKeyInputHandler;
