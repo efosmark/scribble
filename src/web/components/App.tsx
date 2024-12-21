@@ -1,8 +1,8 @@
 import React, { useState, useMemo, MouseEventHandler, useEffect, useCallback, useRef } from 'react';
 import HeadManager from './HeadManager';
 
-import { NUM_COLS, NUM_ROWS, PORT_SOCKET_SERVER } from '../constants';
-import { ACTION_CLEAR_ALL, ACTION_SET_CELL } from '../action';
+import { NUM_COLS, NUM_ROWS, PORT_SOCKET_SERVER } from '../../constants';
+import { ACTION_CLEAR_ALL, ACTION_SET_CELL } from '../../action';
 import { useGrid } from '../useGrid';
 import SvgPaper from './SvgPaper';
 
@@ -45,13 +45,43 @@ const App: React.FC = () => {
     const handleClearAll = () => {
         sendMessage(JSON.stringify({ t: ACTION_CLEAR_ALL }));
     }
+
+    const svgRef = useRef(null);
+    const downloadSVG = () => {
+        // Access the SVG element as a string
+        const svgElement = svgRef.current;
+        if (!svgElement) {
+            console.error('<svg> has no ref.');
+            return;
+        }
+
+        const svgString = new XMLSerializer().serializeToString(svgElement);
+
+        // Create a blob for the SVG content
+        const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+
+        // Create a download link
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "downloaded-svg.svg";
+        document.body.appendChild(link);
+
+        // Trigger download
+        link.click();
+
+        // Clean up
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    };
+
     return (
         <div>
             <HeadManager title="Scribble" description="Write something" />
-            <SvgPaper {...{ grid, setCell: setGridCell }} />
-            <div className="options">
-                <a className="link" onClick={handleClearAll}>clear screen</a>
-            </div>
+            <SvgPaper {...{ grid, setCell: setGridCell }} ref={svgRef} />
+            <ul className="options">
+                <li><a className="link" onClick={handleClearAll}>clear screen</a></li>
+                <li><a className="link" onClick={downloadSVG}>save</a></li>
+            </ul>
         </div>
     );
 };

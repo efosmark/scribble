@@ -1,14 +1,39 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { NUM_COLS, NUM_ROWS } from './constants';
+import { NUM_COLS, NUM_ROWS } from '../constants';
 
 interface SvgKeyHandler {
     setCell(loc: GridLocation, key: string): void;
-    setCursor(cursor: Cursor): void;
-    cursor: Cursor;
+    //setCursor(cursor: Cursor): void;
+    //cursor: Cursor;
     selectedCells: GridLocation[],
+
+    selection: SelectionRange;
+    setSelection(selection: SelectionRange): void;
 }
 
-const useKeyInputHandler = ({ selectedCells, setCell, cursor, setCursor }: SvgKeyHandler) => {
+type Grid = string[][];
+
+interface Shift {
+    grid: Grid;
+    selection: SelectionRange;
+    value?(v: any): any;
+    location?(cell: GridLocation): GridLocation;
+}
+
+const shiftSelection = ({ grid, selection, value, location }: Shift): string[][] => {
+    return grid.map(row => {
+
+        return row.map(cell => {
+            if (value) {
+                return value(cell);
+            }
+        });
+    });
+    
+
+};
+
+const useKeyInputHandler = ({ selectedCells, setCell, }: SvgKeyHandler) => {
 
     const onBackspace = useCallback(() => {
         const { col, row, carriage } = cursor;
@@ -26,6 +51,7 @@ const useKeyInputHandler = ({ selectedCells, setCell, cursor, setCursor }: SvgKe
     }, [cursor]);
 
     const onMove = useCallback((key: string) => {
+        // TODO: shift the selection
         const { col, row } = cursor;
         if (key === 'ArrowRight') {
             const newX = (col + 1) % NUM_COLS;
@@ -59,6 +85,7 @@ const useKeyInputHandler = ({ selectedCells, setCell, cursor, setCursor }: SvgKe
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            console.log(e);
             if (e.key.length === 1) {
                 onKeyDown(e.key);
             } else if (e.key === 'Backspace') {

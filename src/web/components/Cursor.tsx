@@ -1,4 +1,4 @@
-import { CELL_HEIGHT, CELL_WIDTH } from "../constants";
+import { CELL_HEIGHT, CELL_WIDTH } from "../../constants";
 
 interface CursorProps {
     row: number;

@@ -1,5 +1,4 @@
 import React, { MouseEvent, useCallback } from 'react';
-import { CELL_HEIGHT, CELL_WIDTH } from '../constants';
 
 interface CellProps {
     row: number;
@@ -12,9 +11,10 @@ interface CellProps {
     onCellHover(cell: GridLocation): void;
 }
 
-const Cell: React.FC<CellProps> = React.memo(({ row, col, value, isSelected, onCellClick, onCellHover }) => {
+const DEFAULT_FONT_SIZE = 15;
+
+const Cell: React.FC<CellProps> = React.memo(({ row, col, value, isSelected, onCellClick, onCellHover, cellWidth, cellHeight }) => {
     const onCellClickCB = useCallback((event: MouseEvent) => {
-        console.log('click')
         event.stopPropagation();
         return onCellClick({ row, col, carriage: col });
     }, [row, col]);
@@ -24,17 +24,17 @@ const Cell: React.FC<CellProps> = React.memo(({ row, col, value, isSelected, onC
         onPointerOver={useCallback(() => onCellHover({ row, col }), [row, col])}
     >
         <rect
-            x={col * CELL_WIDTH}
+            x={col * cellWidth}
             y={0}
-            width={CELL_WIDTH}
-            height={CELL_HEIGHT}
-            fill={isSelected ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0)"}
+            width={cellWidth}
+            height={cellHeight}
+            fill={isSelected ? "rgba(220,220,255,0.7)" : "rgba(0,0,0,0)"}
 
         />
         <text
-            x={(col * CELL_WIDTH) + 1}
-            y={CELL_HEIGHT - 4}
-            fontSize={15}
+            x={(col * cellWidth) + 1}
+            y={cellHeight - 4}
+            fontSize={DEFAULT_FONT_SIZE}
         >{value}</text>
     </g>;
 });

@@ -46,3 +46,12 @@ a {
 a:hover {
     text-decoration: underline;
 }
+
+svg {
+    user-select: none;
+    /* Prevent selection */
+    -webkit-user-select: none;
+    /* For Safari */
+    -ms-user-select: none;
+    /* For IE/Edge */
+}

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
-import { CELL_WIDTH, CELL_HEIGHT, NUM_ROWS, NUM_COLS } from '../constants';
+import { CELL_WIDTH, CELL_HEIGHT, NUM_ROWS, NUM_COLS } from '../../constants';
 import Cell from './Cell';
 import useKeyInputHandler from '../useKeyInputHandler';
 import { Cursor } from './Cursor';
@@ -10,8 +10,6 @@ import { Cursor } from './Cursor';
 const DEFAULT_CARRIAGE = 12;
 const DEFAULT_ROW = 6;
 const DEFAULT_COL = 12;
-
-const DEFAULT_CURSOR = { col: DEFAULT_COL, row: DEFAULT_ROW, carriage: DEFAULT_CARRIAGE };
 
 const PinkVLine = ({ }) => (
     <line
@@ -49,21 +47,21 @@ const BlueHLine = () => (
 
 interface SvgPaperProps {
     grid: GridType;
+    ref: any;
     setCell(cell: GridLocation, value: string): void;
 }
 
-const cellKey = (cell: GridLocation): string => `${cell.row}-${cell.col}`;
+export default React.forwardRef<SVGSVGElement, SvgPaperProps>(({ grid, setCell }, ref) => {
+    //const [cursor, setCursor] = useState<Cursor>(DEFAULT_CURSOR);
+    const [carriage, setCarriage] = useState<number>(DEFAULT_CARRIAGE);
 
-
-export default ({ grid, setCell }: SvgPaperProps) => {
-    const [cursor, setCursor] = useState<Cursor>(DEFAULT_CURSOR);
-    const [selection, setSelection] = useState<SelectionRange>();
+    const [selection, setSelection] = useState<SelectionRange>({ start: null, end: null });
     const [inSelectionMode, setInSelectionMode] = useState<boolean>(false);
     const [hoveredCell, setHoveredCell] = useState<GridLocation>();
 
     const selectedCells = useMemo((): GridLocation[] => {
         if (!selection || !selection.start || !selection.end)
-            return [{ row: cursor.row, col: cursor.col }];
+            return [];
 
         const { start, end } = selection;
         const [startRow, endRow] = [Math.min(start.row, end.row), Math.max(start.row, end.row)];
@@ -72,12 +70,9 @@ export default ({ grid, setCell }: SvgPaperProps) => {
         const rows = Array.from({ length: endRow - startRow + 1 }, (_, r: number) => startRow + r);
         const cols = Array.from({ length: endCol - startCol + 1 }, (_, c: number) => startCol + c);
         return rows.map(row => cols.map(col => ({ row, col }))).flat();
+    }, [selection]);
 
-    }, [selection, cursor]);
-
-
-
-    useKeyInputHandler({ selectedCells, setCell, cursor, setCursor });
+    useKeyInputHandler({ selectedCells, setCell, selection, setSelection });
 
     const handleCellPointerUp = useCallback(() => {
         setInSelectionMode(false);
@@ -102,29 +97,40 @@ export default ({ grid, setCell }: SvgPaperProps) => {
         setSelection(selection => {
             if (inSelectionMode && selection?.start) {
                 return { start: selection?.start, end: hoveredCell ?? null };
+            } else if (!inSelectionMode && selection?.start && selection?.end) {
+                return { start: null, end: null };
             }
             return selection;
         });
     }, [hoveredCell, inSelectionMode]);
 
-    useEffect(() => {
-        if (!inSelectionMode && selection?.start && selection?.end)
-            if (selection.start.row === selection.end.row && selection.start.col === selection.end.col) {
-                setSelection({ start: null, end: null });
-            }
-    }, [selection, inSelectionMode]);
-
     const isCellSelected = useCallback((cell: GridLocation): boolean => {
+        // TODO: make this a Map<> instead, so this can be O(1)
         return selectedCells.find(c => c.row === cell.row && c.col === cell.col) !== undefined;
     }, [selectedCells]);
 
+
+    const onCellClicked = useCallback((cell: GridLocation) => {
+        setSelection({ start: { ...cell }, end: { ...cell } });
+        setCarriage(cell.col);
+    }, []);
+
     return (
         <svg
+            ref={ref}
             width={NUM_COLS * CELL_WIDTH}
             height={NUM_ROWS * CELL_HEIGHT}
             onPointerUp={handleCellPointerUp}
             onPointerDown={handleCellPointerDown}
         >
+            <style>
+                text {'{'}
+                font-family: 'Courier New', Courier, monospace;
+                color: black;
+                fill:black;
+                {'}'}
+            </style>
+            <rect width="100%" height="100%" fill="white" />
             {grid.map((row, y) => (
                 <g transform={`translate(0, ${y * CELL_HEIGHT})`} key={y}>
                     {y > 4 && <BlueHLine />}
@@ -137,15 +143,15 @@ export default ({ grid, setCell }: SvgPaperProps) => {
                             cellWidth={CELL_WIDTH}
                             cellHeight={CELL_HEIGHT}
                             isSelected={isCellSelected({ row: y, col: x })}
-                            onCellClick={setCursor}
+                            onCellClick={onCellClicked}
                             onCellHover={setHoveredCell}
                         />
                     ))}
                 </g>
             ))}
-            {cursor.carriage > 0 && cursor.carriage !== DEFAULT_CARRIAGE && <CarriageIndicator carriage={cursor.carriage} />}
+            {carriage > 0 && carriage !== DEFAULT_CARRIAGE && <CarriageIndicator carriage={carriage} />}
             <PinkVLine />
-            <Cursor row={cursor.row} col={cursor.col} />
+            {/* <Cursor row={cursor.row} col={cursor.col} /> */}
         </svg>
     );
-};
+});
