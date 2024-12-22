@@ -6,9 +6,10 @@ interface SvgKeyHandler {
     //setCursor(cursor: Cursor): void;
     //cursor: Cursor;
     selectedCells: GridLocation[],
-
     selection: SelectionRange;
     setSelection(selection: SelectionRange): void;
+
+    
 }
 
 type Grid = string[][];
@@ -21,20 +22,22 @@ interface Shift {
 }
 
 const shiftSelection = ({ grid, selection, value, location }: Shift): string[][] => {
-    return grid.map(row => {
-
-        return row.map(cell => {
+    const result = grid.map(r=>[...r]);
+    grid.forEach((row,rowNum) => {
+        row.forEach((cell, colNum) => {
             if (value) {
-                return value(cell);
+                cell = value(cell);
             }
+            if (location) {
+                const { row:rowNum, col:colNum } = location({row:rowNum, col:colNum});
+            }
+            result[rowNum][colNum] = cell;
         });
     });
-    
-
+    return result;
 };
 
 const useKeyInputHandler = ({ selectedCells, setCell, }: SvgKeyHandler) => {
-
     const onBackspace = useCallback(() => {
         const { col, row, carriage } = cursor;
         if (col > 0) {
@@ -79,8 +82,6 @@ const useKeyInputHandler = ({ selectedCells, setCell, }: SvgKeyHandler) => {
             setCursor({ col: newCol, row: newRow, carriage });
             setCell({ row, col }, key);
         }
-
-
     }, [cursor, selectedCells]);
 
     useEffect(() => {
