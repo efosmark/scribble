@@ -10,8 +10,9 @@ interface SelectionRange {
     end: GridLocation | null;
 }
 
-interface Cursor extends GridLocation {
-    carriage: number;
-}
-
 type GridType = string[][];
+
+
+interface Cell extends GridLocation {
+    value: any;
+}

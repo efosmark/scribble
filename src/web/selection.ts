@@ -12,6 +12,8 @@ interface SvgKeyHandler {
     grid:Grid;
 }
 
+type CellModifier = (cell:Cell) => Cell;
+
 interface Shift {
     grid: Grid;
     //selection: SelectionRange;
@@ -46,6 +48,14 @@ const shiftSelection = ({ grid, cells, value, location }: Shift): string[][] => 
     });
     return result;
 };
+
+
+const applyBackspace = (grid:Grid, cells:Set<string>) => shiftSelection({
+    grid,
+    cells,
+    value: () => '',
+    location: (c) => ({ row: c.row, col: c.col - 1 })
+});
 
 const useKeyInputHandler = ({ selectedCells, setCell, grid, cells }: SvgKeyHandler) => {
     const onBackspace = useCallback(() => {
@@ -117,5 +127,3 @@ const useKeyInputHandler = ({ selectedCells, setCell, grid, cells }: SvgKeyHandl
         };
     }, [cursor, selectedCells]);
 };
-
-export default useKeyInputHandler;
