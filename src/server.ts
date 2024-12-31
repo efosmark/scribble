@@ -1,18 +1,18 @@
 import WebSocket, { WebSocketServer } from "ws";
 import { PORT_SOCKET_SERVER } from './constants';
-import { ACTION_SET_CELL, ACTION_CLIENT_CONN, ACTION_CLIENT_CLOSE, Action } from './action';
+import { Action, CellsChangedAction, ConnectedAction, DisconnectedAction, ClearAllAction } from './action';
 import { Client } from "./client";
+import { Grid2D } from "./grid";
 
 
 export class SharedNoteManager {
-
     server: WebSocketServer;
     clients: Map<WebSocket, Client>
-    cells: Map<number, Map<number, string>>
+    cells: Grid2D<string>
 
     constructor() {
         this.clients = new Map();
-        this.cells = new Map();
+        this.cells = new Grid2D<string>();
         this.server = new WebSocketServer({ port: PORT_SOCKET_SERVER });
         this.server.on('connection', (s: WebSocket) => this.onConnect(s));
     }
@@ -20,43 +20,39 @@ export class SharedNoteManager {
     onConnect(socket: WebSocket) {
         const client = new Client(this, socket);
         this.clients.set(socket, client);
-        for (let [y, row] of this.cells.entries()) {
-            for (let [x, key] of row) {
-                socket.send(JSON.stringify(new Action(ACTION_SET_CELL, { x, y, key })));
-            }
+        const allCells = this.cells.allCells().map(cell => cell.value);
+        if (allCells.length > 0) {
+            console.log('allCells', allCells);
+            client.send(new CellsChangedAction(this.cells.allCells().map(c => ({ row: c.row, col: c.col, value: c?.value, author: c.author }))));
         }
-        this.broadcast(new Action(ACTION_CLIENT_CONN, client.ident), client.ident);
+        this.broadcast(new ConnectedAction(client.ident), client.ident);
     }
 
     onClientClose(clientSocket: WebSocket) {
-        const ident = this.clients.get(clientSocket)?.ident;
+        const ident = this.clients.get(clientSocket)?.ident ?? -1;
         this.clients.delete(clientSocket);
-        this.broadcast(new Action(ACTION_CLIENT_CLOSE, ident?.toString()), ident);
+        this.broadcast(new DisconnectedAction(ident), ident);
     }
 
-    setCell(x: number, y: number, key: string) {
-        if (!this.cells.has(y)) {
-            this.cells.set(y, new Map())
-        }
-        this.cells.get(y)?.set(x, key);
-        this.broadcast(new Action(ACTION_SET_CELL, { x, y, key }), undefined)
+    setCells(cells: Cell<string>[], fromIdent: number) {
+        console.log('setCells', cells);
+        for (let cell of cells)
+            this.cells.set({ ...cell, author: fromIdent });
+        this.broadcast(new CellsChangedAction(cells.map(cell => ({ ...cell, author: fromIdent }))), undefined)
     }
 
     clearAll() {
-        for (let [y, row] of this.cells.entries()) {
-            for (let [x, key] of row) {
-                if (key !== ' ')
-                    this.setCell(x, y, ' ');
-            }
-        }
+        this.broadcast(new ClearAllAction(), undefined)
+        this.cells = new Grid2D();
     }
 
     broadcast(packet: Action, fromIdent: number | undefined) {
+        console.log('-->', packet);
         for (let [socket, client] of this.clients.entries()) {
-            client.send(packet);
+            if (client.ident !== fromIdent)
+                client.send(packet);
         }
     }
 }
-
 
 const wb = new SharedNoteManager()

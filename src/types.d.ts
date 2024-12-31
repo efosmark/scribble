@@ -1,18 +1,13 @@
 
+type SetState<T> = React.Dispatch<React.SetStateAction<T>>;
 
-interface GridLocation {
+interface Cell<E> {
     row: number;
     col: number;
-}
+    value?: E;
+    author?: number;
+    ts?: number;
+};
 
-interface SelectionRange {
-    start: GridLocation | null;
-    end: GridLocation | null;
-}
-
-type GridType = string[][];
-
-
-interface Cell extends GridLocation {
-    value: any;
-}
+type SelectionMapFn = (row: number, col: number, selection: Set<string>) => string;
+type GridMapFn<E> = (cell: Cell<E>) => Cell<E>;

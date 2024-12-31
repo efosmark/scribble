@@ -1,9 +1,9 @@
 import WebSocket from "ws";
-import { ACTION_SET_CELL, Action, ACTION_CLEAR_ALL } from './action';
+import { Action, ACTION_CELL_CHANGED, ACTION_CLEAR_ALL, CellsChangedAction } from './action';
 import { SharedNoteManager } from "./server";
 
 function obfuscatedId(input: number) {
-    const prime = 9949; // A prime number
+    const prime = 9949;
     const mod = 900; // Modulo range
     return 100 + ((input * prime) % mod);
 }
@@ -40,12 +40,14 @@ export class Client {
     }
 
     handleMessage(message: string) {
-        const { t: packetType, c: content } = JSON.parse(message);
-        console.log(packetType, content);
-        switch (packetType) {
-            case ACTION_SET_CELL: {
-                const { x, y, key } = content;
-                this.manager.setCell(x, y, key)
+        const action = JSON.parse(message);
+        console.log('<--', action);
+        switch (action.type) {
+            case ACTION_CELL_CHANGED: {
+                // TODO: this is fragile
+                const changes = (action as CellsChangedAction);
+                if (changes.cells.length > 0)
+                    this.manager.setCells(changes.cells, this.ident);
                 break;
             }
             case ACTION_CLEAR_ALL:
@@ -53,7 +55,7 @@ export class Client {
                 break;
 
             default:
-                console.error('ERROR', packetType, content);
+                console.error('ERROR', action);
                 throw "Invalid packet format";
         }
     }
