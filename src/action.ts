@@ -6,7 +6,12 @@ export const ACTION_CLIENT_CLOSE = 'close';
 export const ACTION_CLEAR_ALL = 'clear';
 
 export abstract class Action {
-    abstract type: string;
+    abstract t: string;
+    ts: number;
+
+    constructor() {
+        this.ts = Math.floor(Date.now() / 1000);
+    }
 
     toJSON = () => Object.getOwnPropertyNames(this).reduce((result, prop) => {
         const value = this[prop as keyof Action];
@@ -14,13 +19,13 @@ export abstract class Action {
             return { ...result, [prop]: value }
         }
         return result;
-    }, {} as Record<keyof Action, any>);
+    }, {} as Record<keyof Action, number | string | null>);
 
-    toString = () => `Action("${this.type}")`;
+    toString = () => `Action("${this.t}")`;
 }
 
 export class CellsChangedAction extends Action {
-    type = ACTION_CELL_CHANGED;
+    t = ACTION_CELL_CHANGED;
     cells: Cell<string>[];
     constructor(cells: Cell<string>[]) {
         super();
@@ -29,7 +34,7 @@ export class CellsChangedAction extends Action {
 }
 
 export class ConnectedAction extends Action {
-    type = ACTION_CLIENT_CONN;
+    t = ACTION_CLIENT_CONN;
     ident: number;
     constructor(ident: number) {
         super();
@@ -38,7 +43,7 @@ export class ConnectedAction extends Action {
 }
 
 export class DisconnectedAction extends Action {
-    type = ACTION_CLIENT_CLOSE;
+    t = ACTION_CLIENT_CLOSE;
     ident: number;
     constructor(ident: number) {
         super();
@@ -47,5 +52,5 @@ export class DisconnectedAction extends Action {
 }
 
 export class ClearAllAction extends Action {
-    type = ACTION_CLEAR_ALL;
+    t = ACTION_CLEAR_ALL;
 }

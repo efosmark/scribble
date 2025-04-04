@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import HeadManager from './HeadManager';
 import { DEFAULT_CARRIAGE, NUM_COLS, NUM_ROWS, PORT_SOCKET_SERVER } from '../../constants';
-import { CellsChangedAction } from '../../action';
-import SvgPaper from './SvgPaper';
-import { applyGridChanges, getGridChanges, Grid2D, initializeGrid } from '../../grid';
+import { CellsChangedAction, ClearAllAction } from '../../action';
+import SvgPaper from './SvgView';
+import { Grid2D, initializeGrid } from '../../grid';
 import { useKeyboardInput } from '../useKeyboardInput';
 import { useSocketConnection } from '../useSocketConn';
 
@@ -15,48 +15,58 @@ const App: React.FC = () => {
     const [carriage, setCarriage] = useState<number>(DEFAULT_CARRIAGE);
     const [hoveredCell, setHoveredCell] = useState<Cell<string>>();
 
-    const { sendAction } = useSocketConnection(SOCKET_SERVER, {
+    const { isConnected, sendAction } = useSocketConnection(SOCKET_SERVER, {
         onCellsChanged: (action) => {
-            setGrid(g => applyGridChanges(g, action.cells))
+            const changeset = new Grid2D<string>(action.cells);
+            setGrid(g => g.union(changeset));
         },
         onClearGrid: () => {
-            setGrid(g => initializeGrid<string>(NUM_ROWS, NUM_COLS))
+            setGrid(initializeGrid<string>(NUM_ROWS, NUM_COLS))
         }
     });
 
     const prevGridRef = useRef<Grid2D<string>>();
     useEffect(() => {
-        const prevGrid = prevGridRef.current;
+        if (!isConnected) return;
+        const diff = (prevGridRef.current !== undefined) ? prevGridRef.current.difference(grid) : grid;
+        const cells = diff.allCells().filter(cell => cell.author === undefined && cell.value !== undefined);
+        const changes = new CellsChangedAction(cells);
+        if (changes.cells.length > 0)
+            sendAction(changes);
         prevGridRef.current = grid;
-        if (prevGrid !== undefined) {
-            const cells = getGridChanges(prevGrid, grid).filter(cell => cell.author === undefined);
-            const changes = new CellsChangedAction(cells);
-            if (changes.cells.length > 0) {
-                sendAction(changes);
-            }
-        }
-    }, [grid]);
+    }, [grid, sendAction, isConnected]);
 
-    const handleClearAll = () => {
-        setGrid(g => initializeGrid<string>(NUM_ROWS, NUM_COLS));
-        //sendMessage(JSON.stringify({ t: ACTION_CLEAR_ALL }));
+    const onClearAllClicked = () => {
+        sendAction(new ClearAllAction());
     }
 
-    useKeyboardInput({ carriage, selection, setGrid, setSelection });
+    const constraints: SizeConstraints = {
+        rowMax: NUM_ROWS,
+        colMax: NUM_COLS
+    };
+    useKeyboardInput({ carriage, selection, setGrid, setSelection, constraints });
 
+    const [downloader, setDownloader] = useState<(() => void) | null>(null);
     const downloadSVG = () => {
-
+        if (downloader) downloader();
     };
 
     return (
         <div>
             <HeadManager title="Scribble" description="Write something" />
-            <p>{hoveredCell?.author ?? '--'}</p>
-            <SvgPaper {...{ grid, setGrid, selection, setSelection, carriage, setCarriage, hoveredCell, setHoveredCell }} />
+            <SvgPaper {...{
+                grid, setGrid,
+                selection, setSelection,
+                carriage, setCarriage,
+                hoveredCell, setHoveredCell,
+                setDownloader
+            }} />
             <ul className="options">
-                <li><a className="link" onClick={handleClearAll}>clear screen</a></li>
-                <li><a className="link" onClick={downloadSVG}>save</a></li>
+                <li className="title">Options</li>
+                <li><a className="link" onClick={onClearAllClicked}>clear all</a></li>
+                <li><a className="link" onClick={downloadSVG}>save file</a></li>
             </ul>
+            <p>{hoveredCell?.author ?? '--'}</p>
         </div>
     );
 };

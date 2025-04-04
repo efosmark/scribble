@@ -4,10 +4,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rm -rf dist/",
-    "build:server": "npx esbuild src/server.ts --bundle --platform=node --outfile=dist/server.js",
-    "start:server": "esr src/server.ts",
+    "build:server": "npx esbuild src/server/server.ts --bundle --platform=node --outfile=dist/server.js",
+    "start:server": "esr src/server/server.ts",
     "start:web": "webpack serve --mode development --open",
-    "build": "webpack --mode production"
+    "build": "webpack --mode production",
+    "lint": "eslint ./src"
   },
   "author": "",
   "license": "ISC",
@@ -19,18 +20,23 @@
     "react-helmet-async": "^2.0.5",
     "react-use-websocket": "^4.11.1",
     "serve-static": "^1.16.2",
-    "ws": "^8.18.0"
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
+    "ws": "^8.18.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.17.0",
     "@types/react": "^18.0.1",
     "@types/react-dom": "^18.0.1",
     "css-loader": "^7.1.2",
     "esbuild": "^0.24.0",
     "esbuild-runner": "^2.2.2",
+    "eslint": "^9.17.0",
     "html-webpack-plugin": "^5.6.3",
     "style-loader": "^4.0.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.7.2",
+    "typescript-eslint": "^8.19.1",
     "webpack": "^5.97.1",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.1.0"
